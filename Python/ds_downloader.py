@@ -1,3 +1,5 @@
+#Script to download mini_speech_commands dataset from tensorflow 
+
 import os
 import pathlib
 
