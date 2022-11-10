@@ -19,4 +19,4 @@ if not data_dir.exists():
       'mini_speech_commands.zip',
       origin="http://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip",
       extract=True,
-      cache_dir='.', cache_subdir='data')
+      cache_dir='.', cache_subdir='speech_commands')
