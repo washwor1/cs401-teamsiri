@@ -3,7 +3,7 @@ from torchaudio.datasets import SPEECHCOMMANDS
 import os
 import torch
 
-#load labels --> I already generated this and saved it to a file
+#load labels --> I already generated this and saved it to a file #will have to pass in. cringe
 labels = []
 with open("labels.txt", "r") as f:
     for line in f:
@@ -67,7 +67,7 @@ def getTrainLoader(train_set, batch_size, shuffle, num_workers, pin_memory, coll
     return torch.utils.data.DataLoader(
         train_set,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=shuffle,
         collate_fn=collate_fn,
         num_workers=num_workers,
         pin_memory=pin_memory,
@@ -78,8 +78,8 @@ def getTestLoader(test_set, batch_size, shuffle, drop_last, num_workers, pin_mem
     return torch.utils.data.DataLoader(
         test_set,
         batch_size=batch_size,
-        shuffle=False,
-        drop_last=False,
+        shuffle=shuffle,
+        drop_last=drop_last,
         collate_fn=collate_fn,
         num_workers=num_workers,
         pin_memory=pin_memory,
