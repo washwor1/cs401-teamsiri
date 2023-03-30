@@ -52,7 +52,7 @@ the network on a GPU will greatly decrease the training/testing runtime.
 
 
 """
-
+# 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
@@ -119,21 +119,17 @@ the speaker, the number of the utterance.
 print("Shape of waveform: {}".format(waveform.size()))
 print("Sample rate of waveform: {}".format(sample_rate))
 
-plt.plot(waveform.t().numpy());
-
-"""Let’s find the list of labels available in the dataset.
-
-
+plt.plot(waveform.t().numpy())
 
 """
-
+Let’s find the list of labels available in the dataset.
+"""
+print("test")
 labels = sorted(list(set(datapoint[2] for datapoint in train_set)))
-labels
-
+# labels
+print("test1")
 """The 35 audio labels are commands that are said by users. The first few
 files are people saying “marvin”.
-
-
 
 """
 
@@ -210,9 +206,8 @@ encoding.
 
 
 """
-
+# Make all tensor in a batch the same length by padding with zeros
 def pad_sequence(batch):
-    # Make all tensor in a batch the same length by padding with zeros
     batch = [item.t() for item in batch]
     batch = torch.nn.utils.rnn.pad_sequence(batch, batch_first=True, padding_value=0.)
     return batch.permute(0, 2, 1)
@@ -264,7 +259,8 @@ test_loader = torch.utils.data.DataLoader(
     pin_memory=pin_memory,
 )
 
-"""## Define the Network
+"""
+## Define the Network
 
 For this tutorial we will use a convolutional neural network to process
 the raw audio data. Usually more advanced transforms are applied to the
@@ -277,8 +273,6 @@ field of their first layer’s filters. Our model’s first filter is length
 around 10ms (and at 4kHz, around 20 ms). This size is similar to speech
 processing applications that often use receptive fields ranging from
 20ms to 40ms.
-
-
 
 """
 
