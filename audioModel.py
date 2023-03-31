@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torch
 
 class M5(nn.Module):
     def __init__(self, n_input=1, n_output=35, stride=16, n_channel=32):
@@ -111,3 +112,69 @@ def predict(tensor, model, device, transform, index_to_label):
     tensor = get_likely_index(tensor)
     tensor = index_to_label(tensor.squeeze())
     return tensor
+
+
+#validate --> Probably will get rid of later. 
+def compute_loss(outputs, target):
+    pass
+
+def compute_metrics(outputs, target):
+    pass
+
+def validate(model, epoch, validation_loader, device, transform, pbar, pbar_update):
+
+    model.eval()
+    loss = None
+    metrics = None
+
+    with torch.no_grad():
+        for data, target in validation_loader:
+            # Move inputs and targets to device (GPU or CPU)
+            inputs = inputs.to(device)
+            target = target.to(device)
+
+            data = transform(data)
+            outputs = model(data)
+
+            # Compute loss and other metrics
+            loss = compute_loss(outputs, target)
+            metrics = compute_metrics(outputs, target)
+
+
+
+#code for validation stuff
+
+"""
+import torch
+from torch.utils.data import DataLoader
+from my_dataset import TestDataset # replace with your own dataset class
+
+# Step 1: Load the test dataset
+test_dataset = TestDataset(...)
+test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+
+# Step 2: Load the trained model
+model = torch.load('path/to/model.pth')
+
+# Step 3: Set the model to evaluation mode
+model.eval()
+
+# Step 4: Run the validation loop
+with torch.no_grad():
+    for inputs, targets in test_loader:
+        # Move inputs and targets to device (GPU or CPU)
+        inputs = inputs.to(device)
+        targets = targets.to(device)
+
+        # Pass inputs through the model to generate predictions
+        outputs = model(inputs)
+
+        # Compute loss and other metrics
+        loss = compute_loss(outputs, targets)
+        metrics = compute_metrics(outputs, targets)
+
+# Step 5: Compute the validation metrics
+validation_metric = compute_validation_metric(metrics)
+print('Validation Metric: {}'.format(validation_metric))
+
+"""

@@ -10,6 +10,12 @@ import matplotlib.pyplot as plt
 import IPython.display as ipd
 import argparse
 
+torch.set_printoptions(threshold=torch.inf)
+
+labels = ['backward', 'bed', 'bird', 'cat', 'dog', 'down', 'eight', 'five', 'follow', 'forward',\
+          'four', 'go', 'happy', 'house', 'learn', 'left', 'marvin', 'nine', 'no', 'off', 'on', 'one', \
+          'right', 'seven', 'sheila', 'six', 'stop', 'three', 'tree', 'two', 'up', 'visual', 'wow', 'yes', 'zero']
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -21,17 +27,6 @@ def get_device_info(device):
         return 1, True
     else:
         return 0, False
-
-def get_labels(train_set):
-    data = []
-    try:
-        with open("labels.txt", "r") as f:
-            for line in f:
-                data.append(str(line[:-1]))
-    except:
-        print("Failed to open \"labels.txt\", gathering labels manually!")
-        data = sorted(list(set(datapoint[2] for datapoint in train_set)))
-    return data
 
 def set_tranform_function(origin_frequency, new_frequency, device):
     transformFunction = torchaudio.transforms.Resample(orig_freq=origin_frequency, new_freq=new_frequency)
@@ -48,6 +43,7 @@ if __name__ == "__main__":
     parser.add_argument("--sample_rate", default=8000, type=int, help="Sample rate for transformation")
     parser.add_argument("--batch_size", default=256, type=int, help="Batch size for model training")
     parser.add_argument("--test_model", default=False, type=bool, help="Test the model")
+    parser.add_argument("--run_full_test", default=False, type=bool, help="Test the model on all test data")
     # parser.add_argument("--sample_rate", default=8000, type=int, help="Sample rate for transformation")
     # parser.add_argument("--sample_rate", default=8000, type=int, help="Sample rate for transformation")
     
@@ -65,6 +61,7 @@ if __name__ == "__main__":
     load_model       = args.load_file
     create_model     = args.create_model
     test_model       = args.test_model
+    run_full_test   = args.run_full_test
 
     device = get_device_type()
     num_workers, pin_memory = get_device_info(device)
@@ -73,9 +70,9 @@ if __name__ == "__main__":
     #get training and testing set
     train_set = importDataset.SubsetSC("training")
     test_set = importDataset.SubsetSC("testing")
+    validation_set = importDataset.SubsetSC("validation")
 
-    #get labels: List of words that this model is being trained on
-    labels = get_labels(train_set)
+    #waveform, sample_rate, utterance, *_ = train_set[50]
     
     transform = set_tranform_function(origin_frequency, new_frequency, device)
 
@@ -100,6 +97,8 @@ if __name__ == "__main__":
         create_model = True
         test_model = False
     
+    if(save_model == True):
+        torch.save(model.state_dict(), save_model_file)
 
     optimizer = audioModel.setOptimizer(model, learn_rate = 0.01, weight_decay=0.0001)
     # reduce the learning after 20 epochs by a factor of 10
@@ -113,16 +112,21 @@ if __name__ == "__main__":
                 audioModel.train(model, epoch, log_interval, train_loader, device, transform, optimizer, pbar, pbar_update)
                 audioModel.test(model, epoch, test_loader, device, transform, pbar, pbar_update)
                 scheduler.step()
-    elif(test_model == True):
+
+    elif(test_model == True): #get rid of pbar, not needed, only running one test on it. 
         with tqdm(total=1) as pbar:
             audioModel.test(model, 1, test_loader, device, transform, pbar, pbar_update)
             scheduler.step()
+    
+    if(run_full_test == True):
+        for fileIndex in range(0, len(train_set)):
+            waveform, sample_rate, utterance, *_ = train_set[fileIndex]
+            ipd.Audio(waveform.numpy(), rate=sample_rate)
 
-    
-    
-    
-    #prediction portion of model!
-    waveform, sample_rate, utterance, *_ = train_set[50]
-    ipd.Audio(waveform.numpy(), rate=sample_rate)
+            output = audioModel.predict(waveform, model, device, transform, importDataset.index_to_label)
 
-    audioModel.predict(waveform, model, device, transform, importDataset.index_to_label)
+
+
+# stop, go
+# on, off
+# yes, no

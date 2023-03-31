@@ -4,10 +4,9 @@ import os
 import torch
 
 #load labels --> I already generated this and saved it to a file #will have to pass in. cringe
-labels = []
-with open("labels.txt", "r") as f:
-    for line in f:
-        labels.append(str(line[:-1]))
+labels = ['backward', 'bed', 'bird', 'cat', 'dog', 'down', 'eight', 'five', 'follow', 'forward',\
+          'four', 'go', 'happy', 'house', 'learn', 'left', 'marvin', 'nine', 'no', 'off', 'on', 'one', \
+          'right', 'seven', 'sheila', 'six', 'stop', 'three', 'tree', 'two', 'up', 'visual', 'wow', 'yes', 'zero']
 
 class SubsetSC(SPEECHCOMMANDS):
     def __init__(self, subset: str = None):
@@ -77,6 +76,18 @@ def getTestLoader(test_set, batch_size, shuffle, drop_last, num_workers, pin_mem
 
     return torch.utils.data.DataLoader(
         test_set,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        drop_last=drop_last,
+        collate_fn=collate_fn,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+    )
+
+def getValidationLoader(validation_set, batch_size, shuffle, drop_last, num_workers, pin_memory, collate_fn = collate_fn):
+
+    return torch.utils.data.DataLoader(
+        validation_set,
         batch_size=batch_size,
         shuffle=shuffle,
         drop_last=drop_last,
