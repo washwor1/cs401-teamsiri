@@ -97,8 +97,7 @@ if __name__ == "__main__":
         create_model = True
         test_model = False
     
-    if(save_model == True):
-        torch.save(model.state_dict(), save_model_file)
+    
 
     optimizer = audioModel.setOptimizer(model, learn_rate = 0.01, weight_decay=0.0001)
     # reduce the learning after 20 epochs by a factor of 10
@@ -124,7 +123,9 @@ if __name__ == "__main__":
             ipd.Audio(waveform.numpy(), rate=sample_rate)
 
             output = audioModel.predict(waveform, model, device, transform, importDataset.index_to_label)
-
+    
+    if(save_model == True):
+        torch.save(model.state_dict(), save_model_file)
 
 
 # stop, go
