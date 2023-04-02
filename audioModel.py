@@ -19,7 +19,6 @@ class M5(nn.Module):
         self.bn4 = nn.BatchNorm1d(2 * n_channel)
         self.pool4 = nn.MaxPool1d(4)
         self.fc1 = nn.Linear(2 * n_channel, n_output)
-        print("test")
 
     def forward(self, x):
         x = self.conv1(x)

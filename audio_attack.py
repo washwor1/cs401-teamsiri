@@ -167,7 +167,7 @@ class M5(nn.Module):
         return x
 
 
-def _attack(model, xs, ys, eps=0.01, alpha=0.001, iters=20, targeted=False) :
+def _attack(model, xs, ys, eps=0.01, alpha=0.001, iters=20, targeted=False):
     xs = xs.to(device)
     ys = ys.to(device)
     loss = nn.CrossEntropyLoss()

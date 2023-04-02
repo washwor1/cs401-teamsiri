@@ -1,14 +1,16 @@
-import torch
-import torchaudio
-import torch.optim as optim
-from tqdm import tqdm
-import os
-
-import audioModel
-import importDataset
 import matplotlib.pyplot as plt
 import IPython.display as ipd
+import torch.optim as optim
+from tqdm import tqdm
+import torchaudio
 import argparse
+import torch
+import os
+
+#local files
+import audioModel
+import importDataset
+import pertubation
 
 torch.set_printoptions(threshold=torch.inf)
 
@@ -117,15 +119,20 @@ if __name__ == "__main__":
             audioModel.test(model, 1, test_loader, device, transform, pbar, pbar_update)
             scheduler.step()
     
-    if(run_full_test == True):
+    if(run_full_test == True): #will update later on!
         for fileIndex in range(0, len(train_set)):
             waveform, sample_rate, utterance, *_ = train_set[fileIndex]
             ipd.Audio(waveform.numpy(), rate=sample_rate)
-
             output = audioModel.predict(waveform, model, device, transform, importDataset.index_to_label)
     
     if(save_model == True):
         torch.save(model.state_dict(), save_model_file)
+
+    #get target, and data!
+
+
+    #adv_data = pertubation.attack(model, data, target, eps=EPS, alpha=ALPHA, iters=ITERS, targeted=CT)
+
 
 
 # stop, go
