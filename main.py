@@ -128,6 +128,20 @@ if __name__ == "__main__":
     if(save_model == True):
         torch.save(model.state_dict(), save_model_file)
 
+
+    waveform, label = train_set[0]
+    data, target = next(iter(test_loader))
+    data, target = data.to(device), target.to(device)
+
+    model = pertubation.M5(n_input=waveform.shape[0], n_output=35)
+    model.load_state_dict(torch.load('model.pt'))
+    model = model.to(device)
+
+
+
+    adv_data = pertubation.attack(model, device, data, target)
+
+    
     #get target, and data!
 
 
