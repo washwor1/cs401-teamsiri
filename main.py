@@ -145,6 +145,11 @@ if __name__ == "__main__":
         with tqdm(total=1) as pbar:
             audioModel.test(model, 1, test_loader, device, transform, pbar, pbar_update)
             scheduler.step()
+
+    input_x = list(range(1, len(labels) + 1))
+    output_y = [[0] * 10 for i in range(0, 10)]
+    print(input_x)
+    print(output_y)
     
     if(run_full_test == True): #will update later on!
         for fileIndex in range(0, len(test_set)):
@@ -155,7 +160,9 @@ if __name__ == "__main__":
                 try:
             #print(waveform.size()[1])
                     output = audioModel.predict(waveform, model, device, transform, importDataset.index_to_label)
-                    print("Non-padded output predicted:", str(utterance) , "-->", str(output) )
+                    output_y[labels.index(utterance)][labels.index(output)] += 1
+                    #print(labels.index(output))
+                    #print("Non-padded output predicted:", str(utterance) , "-->", str(output) )
                 except:
                     print("Predict failed: ", str(fileIndex))
             else:
@@ -165,10 +172,22 @@ if __name__ == "__main__":
 
                 try:
                     output = audioModel.predict(padded_waveform, model, device, transform, importDataset.index_to_label)
-                    print("Padded output predicted:", str(utterance) , "-->", str(output) )
+                    output_y[labels.index(utterance)][labels.index(output)] += 1
+                    #print(labels.index(output))
+                    #print("Padded output predicted:", str(utterance) , "-->", str(output) )
                 except:
                     print("Padded predict failed: ", str(fileIndex))
 
+    print(output_y)
+    graph_data = np.array(output_y)
+    fig = plt.figure()
+
+    plt.imshow(graph_data, cmap='gist_earth', interpolation='nearest')
+    plt.xticks(range(0, 10), labels=labels)
+    plt.yticks(range(0, 10), labels=labels)
+    plt.colorbar()
+    fig.savefig("heatGraph.png")
+    exit(0)
     if(save_model == True):
         torch.save(model.state_dict(), save_model_file)
     exit(0)
