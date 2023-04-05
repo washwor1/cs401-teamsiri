@@ -179,7 +179,13 @@ if __name__ == "__main__":
                     print("Padded predict failed: ", str(fileIndex))
 
     print(output_y)
-    graph_data = np.array(output_y)
+    graph_data = []
+    for y in output_y:
+        total_tests = np.sum(y)
+        graph_data.append([num / total_tests for num in y])
+
+
+    graph_data = np.array(graph_data)
     fig = plt.figure()
 
     plt.imshow(graph_data, cmap='gist_earth', interpolation='nearest')
