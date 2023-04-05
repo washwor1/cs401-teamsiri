@@ -4,7 +4,7 @@ import torch.optim as optim
 import torch
 
 class M5(nn.Module):
-    def __init__(self, n_input=1, n_output=35, stride=16, n_channel=32):
+    def __init__(self, n_input=1, n_output=10, stride=16, n_channel=32):
         super().__init__()
         self.conv1 = nn.Conv1d(n_input, n_channel, kernel_size=80, stride=stride)
         self.bn1 = nn.BatchNorm1d(n_channel)
@@ -107,6 +107,7 @@ def predict(tensor, model, device, transform, index_to_label):
     # Use the model to predict the label of the waveform
     tensor = tensor.to(device)
     tensor = transform(tensor)
+    #print(tensor.size())
     tensor = model(tensor.unsqueeze(0))
     tensor = get_likely_index(tensor)
     tensor = index_to_label(tensor.squeeze())

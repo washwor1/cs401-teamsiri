@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch
 
 class M5(nn.Module):
-    def __init__(self, n_input=1, n_output=35, stride=16, n_channel=32):
+    def __init__(self, n_input=1, n_output=10, stride=16, n_channel=32):
         super().__init__()
         self.conv1 = nn.Conv1d(n_input, n_channel, kernel_size=80, stride=stride)
         self.bn1 = nn.BatchNorm1d(n_channel)
@@ -20,7 +20,6 @@ class M5(nn.Module):
         self.bn4 = nn.BatchNorm1d(2 * n_channel)
         self.pool4 = nn.MaxPool1d(4)
         self.fc1 = nn.Linear(2 * n_channel, n_output)
-        print("test")
 
     def forward(self, x):
         x = self.conv1(x)
@@ -39,4 +38,32 @@ class M5(nn.Module):
         x = x.permute(0, 2, 1)
         x = self.fc1(x)
         return x
-        # return F.log_softmax(x, dim=2)
+    
+
+def attack(model, device, xs, target = None, eps=0.01, alpha=0.001, iters=20, targeted=False):
+    
+    xs = xs.to(device)
+    target = target.to(device)
+    loss = nn.CrossEntropyLoss()
+        
+    ori_xs = xs.data
+    
+    if target == None and targeted == True:
+        print("In pertubation.attack(): No target specified, but targeted is True")
+
+    
+    for i in range(iters):
+        xs.requires_grad = True
+        outputs = model(xs)
+    
+        model.zero_grad()
+        cost = loss(outputs.squeeze(), target).to(device)
+        cost.backward()
+        adv_xs = xs - alpha*xs.grad.sign()
+        
+        eta = torch.clamp(adv_xs - ori_xs, min=-eps, max=eps)
+        xs = torch.clamp(ori_xs + eta, min=-1, max=1).detach_()
+        #print("Iteration: " + str(i))
+            
+    return xs   
+

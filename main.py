@@ -6,17 +6,29 @@ import torchaudio
 import argparse
 import torch
 import os
-
+import tensorflow as tf
 #local files
 import audioModel
 import importDataset
 import pertubation
+import librosa
+import wave
+import numpy as np
+
+
+testAudio = None
+
+
+
 
 torch.set_printoptions(threshold=torch.inf)
 
-labels = ['backward', 'bed', 'bird', 'cat', 'dog', 'down', 'eight', 'five', 'follow', 'forward',\
+all_labels = ['backward', 'bed', 'bird', 'cat', 'dog', 'down', 'eight', 'five', 'follow', 'forward',\
           'four', 'go', 'happy', 'house', 'learn', 'left', 'marvin', 'nine', 'no', 'off', 'on', 'one', \
           'right', 'seven', 'sheila', 'six', 'stop', 'three', 'tree', 'two', 'up', 'visual', 'wow', 'yes', 'zero']
+
+labels = ['yes', 'no', 'up', 'down', 'left', 'right', 'on', 'off', 'stop', 'go']
+
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -46,10 +58,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=256, type=int, help="Batch size for model training")
     parser.add_argument("--test_model", default=False, type=bool, help="Test the model")
     parser.add_argument("--run_full_test", default=False, type=bool, help="Test the model on all test data")
-    # parser.add_argument("--sample_rate", default=8000, type=int, help="Sample rate for transformation")
-    # parser.add_argument("--sample_rate", default=8000, type=int, help="Sample rate for transformation")
     
-
     args = parser.parse_args()
 
     log_interval     = 20
@@ -66,14 +75,29 @@ if __name__ == "__main__":
     run_full_test    = args.run_full_test
     train_model      = False
 
-    device = get_device_type()
+    device = torch.device('cpu') #get_device_type()
     num_workers, pin_memory = get_device_info(device)
 
 
     #get training and testing set
     train_set = importDataset.SubsetSC("training")
+    
+    # with open("files.txt", "w") as f:
+    #     f.writelines(train_set._walker)
+
     test_set = importDataset.SubsetSC("testing")
-    validation_set = importDataset.SubsetSC("validation")
+
+
+    #validation_set = importDataset.SubsetSC("validation")
+
+    #train_set = importDataset.filter_selected_labels(train_set)
+
+    # exit(0)
+    np.savetxt("original.txt", test_set[0][0][0].numpy())
+    fig = plt.figure()
+    plt.plot(test_set[0][0][0].numpy())
+    plt.title("Original audio: Right")
+    fig.savefig("original.png")
 
     #waveform, sample_rate, utterance, *_ = train_set[50]
     
@@ -83,6 +107,9 @@ if __name__ == "__main__":
     train_loader = importDataset.getTrainLoader(train_set, batch_size, True, num_workers, pin_memory)
     test_loader = importDataset.getTestLoader(test_set, batch_size, False, False, num_workers, pin_memory)
 
+    # print(test_loader)
+    # exit(0)
+
     #get model --> if statement for either loading in, or creating a new one!
     model = audioModel.M5()
     print(load_model)
@@ -91,7 +118,7 @@ if __name__ == "__main__":
             print("\'%s\' does not exist, exiting" % load_model_file) #Force to rerun
             exit(1)
         else:
-            model.load_state_dict(torch.load("test.ptf"))
+            model.load_state_dict(torch.load(load_model_file))
             model.eval()
             model.to(device)
             train_model = False
@@ -120,26 +147,72 @@ if __name__ == "__main__":
             scheduler.step()
     
     if(run_full_test == True): #will update later on!
-        for fileIndex in range(0, len(train_set)):
-            waveform, sample_rate, utterance, *_ = train_set[fileIndex]
-            ipd.Audio(waveform.numpy(), rate=sample_rate)
-            output = audioModel.predict(waveform, model, device, transform, importDataset.index_to_label)
-    
+        for fileIndex in range(0, len(test_set)):
+            waveform, sample_rate, utterance, *_ = test_set[fileIndex]
+            # ipd.Audio(waveform.numpy(), rate=sample_rate)
+            if(waveform.size()[0] == 1 and waveform.size()[1] == 16000):
+                #print("valid")
+                try:
+            #print(waveform.size()[1])
+                    output = audioModel.predict(waveform, model, device, transform, importDataset.index_to_label)
+                    print("Non-padded output predicted:", str(utterance) , "-->", str(output) )
+                except:
+                    print("Predict failed: ", str(fileIndex))
+            else:
+                #print("Size does not match: ", str(fileIndex), str(sample_rate))
+                pad_vals = (0, 16000 - waveform.size()[1])
+                padded_waveform = torch.nn.functional.pad(waveform, pad_vals, mode='constant', value=0)
+
+                try:
+                    output = audioModel.predict(padded_waveform, model, device, transform, importDataset.index_to_label)
+                    print("Padded output predicted:", str(utterance) , "-->", str(output) )
+                except:
+                    print("Padded predict failed: ", str(fileIndex))
+
     if(save_model == True):
         torch.save(model.state_dict(), save_model_file)
-
-
-    waveform, label = train_set[0]
+    exit(0)
+    waveform, *_ = train_set[0]
     data, target = next(iter(test_loader))
     data, target = data.to(device), target.to(device)
 
+    print(target.size())
+    exit(0)
+
     model = pertubation.M5(n_input=waveform.shape[0], n_output=35)
-    model.load_state_dict(torch.load('model.pt'))
+    model.load_state_dict(torch.load('test.ptf'))
     model = model.to(device)
 
+    adv_data = pertubation.attack(model, device, data, target, targeted=True)
+
+    # with open("t.txt", 'w') as f:
+    #     f.write(str(adv_data))
 
 
-    adv_data = pertubation.attack(model, device, data, target)
+    testThing = adv_data[0][0].numpy()
+
+    fig = plt.figure()
+    
+    plt.plot(testThing)
+    plt.title("Pertubation Audio: Right --> Left")
+    fig.savefig("Pertubation.png")
+    #librosa.display.waveshow(testThing)
+    
+    np.savetxt("pertubation.txt", testThing)
+
+    #ipd.Audio(testThing, rate=len(testThing))
+
+    with wave.open('output.wav', 'wb') as wave_file:
+        wave_file.setnchannels(1)  # mono audio
+        wave_file.setsampwidth(2)  # 16-bit audio
+        wave_file.setframerate(16000)  # sampling rate
+        wave_file.setnframes(testThing.shape[0])  # number of frames
+        wave_file.writeframes(testThing.astype(np.int16))  # write audio data
+
+
+    output = audioModel.predict(adv_data[0], model, device, transform, importDataset.index_to_label)
+
+    print(output)
 
     
     #get target, and data!
