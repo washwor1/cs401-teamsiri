@@ -146,53 +146,35 @@ if __name__ == "__main__":
             audioModel.test(model, 1, test_loader, device, transform, pbar, pbar_update)
             scheduler.step()
 
-    input_x = list(range(1, len(labels) + 1))
     output_y = [[0] * 10 for i in range(0, 10)]
-    print(input_x)
-    print(output_y)
     
     if(run_full_test == True): #will update later on!
         for fileIndex in range(0, len(test_set)):
             waveform, sample_rate, utterance, *_ = test_set[fileIndex]
-            # ipd.Audio(waveform.numpy(), rate=sample_rate)
-            if(waveform.size()[0] == 1 and waveform.size()[1] == 16000):
-                #print("valid")
-                try:
-            #print(waveform.size()[1])
-                    output = audioModel.predict(waveform, model, device, transform, importDataset.index_to_label)
-                    output_y[labels.index(utterance)][labels.index(output)] += 1
-                    #print(labels.index(output))
-                    #print("Non-padded output predicted:", str(utterance) , "-->", str(output) )
-                except:
-                    print("Predict failed: ", str(fileIndex))
-            else:
-                #print("Size does not match: ", str(fileIndex), str(sample_rate))
+            if(waveform.size()[1] != 16000):
                 pad_vals = (0, 16000 - waveform.size()[1])
                 padded_waveform = torch.nn.functional.pad(waveform, pad_vals, mode='constant', value=0)
+                output = audioModel.predict(padded_waveform, model, device, transform, importDataset.index_to_label)
+            else:
+                output = audioModel.predict(waveform, model, device, transform, importDataset.index_to_label)
+            output_y[labels.index(utterance)][labels.index(output)] += 1
+        #end for
+        
+        graph_data = []
+        for y in output_y:
+            total_tests = np.sum(y)
+            graph_data.append([num / total_tests for num in y])
 
-                try:
-                    output = audioModel.predict(padded_waveform, model, device, transform, importDataset.index_to_label)
-                    output_y[labels.index(utterance)][labels.index(output)] += 1
-                    #print(labels.index(output))
-                    #print("Padded output predicted:", str(utterance) , "-->", str(output) )
-                except:
-                    print("Padded predict failed: ", str(fileIndex))
+        graph_data = np.array(graph_data)
+        fig = plt.figure()
 
-    print(output_y)
-    graph_data = []
-    for y in output_y:
-        total_tests = np.sum(y)
-        graph_data.append([num / total_tests for num in y])
-
-
-    graph_data = np.array(graph_data)
-    fig = plt.figure()
-
-    plt.imshow(graph_data, cmap='gist_earth', interpolation='nearest')
-    plt.xticks(range(0, 10), labels=labels)
-    plt.yticks(range(0, 10), labels=labels)
-    plt.colorbar()
-    fig.savefig("heatGraph.png")
+        plt.imshow(graph_data, cmap='gist_earth', interpolation='nearest')
+        plt.xticks(range(0, 10), labels=labels)
+        plt.yticks(range(0, 10), labels=labels)
+        plt.colorbar()
+        fig.savefig("heatGraph.png")
+    
+    
     exit(0)
     if(save_model == True):
         torch.save(model.state_dict(), save_model_file)
