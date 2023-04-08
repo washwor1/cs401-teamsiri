@@ -127,9 +127,9 @@ if __name__ == "__main__":
         train_model = True
         test_model = False
     
-    optimizer = audioModel.setOptimizer(model, learn_rate = 0.01, weight_decay=0.0001)
+    optimizer = audioModel.setOptimizer(model, learn_rate = 0.001, weight_decay=0.0001)
     # reduce the learning after 20 epochs by a factor of 10
-    scheduler = audioModel.setScheduler(optimizer, step_size=20, gamma=0.1)
+    scheduler = audioModel.setScheduler(optimizer, step_size=5, gamma=0.5)
 
     pbar_update = 1 / (len(train_loader) + len(test_loader))
     if(train_model == True):
