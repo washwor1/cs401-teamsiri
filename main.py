@@ -18,8 +18,7 @@ import numpy as np
 
 testAudio = None
 
-
-
+graphDir = "graphs/"
 
 torch.set_printoptions(threshold=torch.inf)
 
@@ -75,9 +74,9 @@ if __name__ == "__main__":
     run_full_test    = args.run_full_test
     train_model      = False
 
-    device = torch.device('cpu') #get_device_type()
+    device = get_device_type()
     num_workers, pin_memory = get_device_info(device)
-
+    print("Device: " + str(device))
 
     #get training and testing set
     train_set = importDataset.SubsetSC("training")
@@ -172,26 +171,21 @@ if __name__ == "__main__":
         plt.xticks(range(0, 10), labels=labels)
         plt.yticks(range(0, 10), labels=labels)
         plt.colorbar()
-        fig.savefig("heatGraph.png")
+        fig.savefig(graphDir + "heatGraph.png")
     
-    
-    exit(0)
     if(save_model == True):
         torch.save(model.state_dict(), save_model_file)
-    exit(0)
+    
     waveform, *_ = train_set[0]
     data, target = next(iter(test_loader))
-    data, target = data.to(device), target.to(device)
+    data, target = data.to(device), target.to(device)    
 
-    print(target.size())
-    exit(0)
-
-    model = pertubation.M5(n_input=waveform.shape[0], n_output=35)
-    model.load_state_dict(torch.load('test.ptf'))
+    model = pertubation.M5(n_input=waveform.shape[0], n_output=10)
+    model.load_state_dict(torch.load('ten.ptf'))
     model = model.to(device)
 
     adv_data = pertubation.attack(model, device, data, target, targeted=True)
-
+    exit(0)
     # with open("t.txt", 'w') as f:
     #     f.write(str(adv_data))
 

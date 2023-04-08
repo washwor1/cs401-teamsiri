@@ -63,7 +63,7 @@ def attack(model, device, xs, target = None, eps=0.01, alpha=0.001, iters=20, ta
         
         eta = torch.clamp(adv_xs - ori_xs, min=-eps, max=eps)
         xs = torch.clamp(ori_xs + eta, min=-1, max=1).detach_()
-        #print("Iteration: " + str(i))
+        print("Iteration: " + str(i))
             
     return xs   
 
