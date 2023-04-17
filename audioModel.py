@@ -98,7 +98,7 @@ def test(model, epoch, test_loader, device, transform, pbar, pbar_update):
 
 
 def setOptimizer(model, learn_rate, weight_decay):
-    return optim.Adam(model.parameters(), lr=learn_rate, weight_decay=weight_decay)
+    return optim.Adam(model.parameters(), betas=(0.9, 0.999), lr=learn_rate, weight_decay=weight_decay)
 
 def setScheduler(optimizer, step_size, gamma):
     return optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
