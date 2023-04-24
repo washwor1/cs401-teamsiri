@@ -39,8 +39,145 @@ class M5(nn.Module):
         x = self.fc1(x)
         return x
     
+# import torch
+# import torch.nn as nn
+# import torch.optim as optim
+
+# def cw_loss(logits, target, kappa=0):
+#     # Helper function to compute the Carlini & Wagner loss
+#     batch_size = logits.size(0)
+#     num_classes = logits.size(-1)  # Calculate the number of classes from logits tensor
+    
+#     target = target.to(logits.device, dtype=torch.long)  # Ensure target has the correct data type
+#     target_onehot = torch.zeros(batch_size, num_classes, device=logits.device)
+#     target_onehot.scatter_(1, target.view(-1, 1), 1)
+    
+#     real = torch.sum(target_onehot * logits, dim=1)
+#     other = torch.max((1 - target_onehot) * logits, dim=1)[0]
+
+#     loss = torch.clamp(other - real + kappa, min=0)
+#     return torch.mean(loss)
+
+# def attack(model, device, xs, target, eps=1.0, iters=100, targeted=False, learning_rate=0.01, kappa_candidates=None):
+
+#     xs = xs.to(device)
+#     target = target.to(device)
+#     ori_xs = xs.clone().detach()
+
+#     if target is None and targeted is True:
+#         print("In pertubation.attack(): No target specified, but targeted is True")
+
+#     delta = torch.zeros_like(xs, requires_grad=True)
+#     optimizer = optim.Adam([delta], lr=learning_rate)
+
+#     if kappa_candidates is None:
+#         kappa_candidates = [0, 1, 5, 10, 20, 50]
+
+#     best_adv_xs = None
+#     best_adv_distance = float('inf')
+
+#     for kappa in kappa_candidates:
+#         for i in range(iters):
+#             adv_xs = xs + delta
+#             adv_xs = torch.clamp(adv_xs, min=-1, max=1)
+
+#             outputs = model(adv_xs)
+
+#             model.zero_grad()
+#             cost = cw_loss(outputs, target, kappa=kappa)
+
+#             cost.backward()
+#             optimizer.step()
+
+#             delta.data = torch.clamp(delta.data, min=-eps, max=eps)
+
+#         adv_xs = torch.clamp(ori_xs + delta, min=-1, max=1)
+
+#         outputs_labels = torch.argmax(outputs, dim=1).view(-1)
+#         target_labels = target.view(-1)
+
+#         # Workaround for incorrect output shape
+#         if outputs_labels.shape[0] != target_labels.shape[0]:
+#             num_batches = outputs_labels.shape[0] // target_labels.shape[0]
+#             outputs_labels = outputs_labels.view(num_batches, -1)
+#             outputs_labels = outputs_labels.to(dtype=torch.float).mean(dim=0).round().to(dtype=torch.long)
+
+#         if targeted:
+#             successful = (outputs_labels == target_labels)
+#         else:
+#             successful = (outputs_labels != target_labels)
+
+
+#         if successful.any():
+#             adv_distance = torch.norm(adv_xs - ori_xs, p=2, dim=1)
+#             successful_indices = torch.nonzero(successful, as_tuple=False).squeeze()
+
+#             for idx in successful_indices:
+#                 if adv_distance[idx] < best_adv_distance:
+#                     best_adv_xs = adv_xs[idx].unsqueeze(0)
+#                     best_adv_distance = adv_distance[idx]
+
+#     if best_adv_xs is None:
+#         best_adv_xs = adv_xs
+
+#     return best_adv_xs
+
+
+# def cw_loss(logits, target, kappa=0):
+#     # Helper function to compute the Carlini & Wagner loss
+#     batch_size = logits.size(0)
+#     num_classes = logits.size(-1)  # Calculate the number of classes from logits tensor
+    
+#     target = target.to(logits.device, dtype=torch.long)  # Ensure target has the correct data type
+#     target_onehot = torch.zeros(batch_size, num_classes, device=logits.device)
+#     target_onehot.scatter_(1, target.view(-1, 1), 1)
+    
+#     real = torch.sum(target_onehot * logits, dim=1)
+#     other = torch.max((1 - target_onehot) * logits, dim=1)[0]
+
+#     loss = torch.clamp(other - real + kappa, min=0)
+#     return torch.mean(loss)
+
+
+
+
+
+# def attack(model, device, xs, target, eps=0.01, alpha=0.01, iters=50, targeted=False, learning_rate=0.01):
+
+#     xs = xs.to(device)
+#     target = target.to(device)
+#     ori_xs = xs.clone().detach()
+
+#     if target is None and targeted is True:
+#         print("In pertubation.attack(): No target specified, but targeted is True")
+
+#     delta = torch.zeros_like(xs, requires_grad=True)
+
+#     optimizer = optim.Adam([delta], lr=learning_rate)
+
+#     for i in range(iters):
+#         adv_xs = xs + delta
+#         adv_xs = torch.clamp(adv_xs, min=-1, max=1)
+
+#         outputs = model(adv_xs)
+
+#         model.zero_grad()
+#         cost = cw_loss(outputs, target)
+
+#         cost.backward()
+#         optimizer.step()
+
+#         delta.data = torch.clamp(delta.data, min=-eps, max=eps)
+
+#         print("Iteration: " + str(i))
+
+#     adv_xs = torch.clamp(ori_xs + delta, min=-1, max=1)
+#     return adv_xs
+
+
+
                                             # .01, .001
-def attack(model, device, xs, target = None, eps=0.01, alpha=0.01, iters=50, targeted=False):
+def attack(model, device, xs, target = None, eps=.01, alpha=0.001, iters=60, targeted=False):
     
     xs = xs.to(device)
     target = target.to(device)
