@@ -39,8 +39,8 @@ class M5(nn.Module):
         x = self.fc1(x)
         return x
     
-
-def attack(model, device, xs, target = None, eps=0.01, alpha=0.001, iters=20, targeted=False):
+                                            # .01, .001
+def attack(model, device, xs, target = None, eps=0.01, alpha=0.01, iters=50, targeted=False):
     
     xs = xs.to(device)
     target = target.to(device)
