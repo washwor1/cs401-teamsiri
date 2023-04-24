@@ -35,8 +35,12 @@ labels = ['yes', 'no', 'up', 'down', 'left', 'right', 'on', 'off', 'stop', 'go']
 #   if left is input, should return index of 'right' from labels
 #
 def get_target_label(old_label):
-
-    return 1
+    mappedIndex = {"yes":   1, "no":    0,
+                   "up":    3, "down":  2,
+                   "left":  5, "right": 4,
+                   "on":    7, "off":   6,
+                   "stop":  9, "go":    8}
+    return mappedIndex[old_label]
 
 
 def count_parameters(model):
@@ -90,18 +94,8 @@ if __name__ == "__main__":
 
     #get training and testing set
     train_set = importDataset.SubsetSC("training")
-    
-    # with open("files.txt", "w") as f:
-    #     f.writelines(train_set._walker)
-
     test_set = importDataset.SubsetSC("testing")
 
-
-    #validation_set = importDataset.SubsetSC("validation")
-
-    #train_set = importDataset.filter_selected_labels(train_set)
-
-    # exit(0)
     np.savetxt("original.txt", test_set[0][0][0].numpy())
     fig = plt.figure()
     plt.plot(test_set[0][0][0].numpy())
@@ -116,9 +110,6 @@ if __name__ == "__main__":
     train_loader = importDataset.getTrainLoader(train_set, batch_size, True, num_workers, pin_memory)
     test_loader = importDataset.getTestLoader(test_set, batch_size, False, False, num_workers, pin_memory)
 
-    # print(test_loader)
-    # exit(0)
-
     #get model --> if statement for either loading in, or creating a new one!
     model = audioModel.M5()
     print(load_model)
@@ -129,7 +120,7 @@ if __name__ == "__main__":
             exit(1)
         else:
             model.load_state_dict(torch.load(load_model_file))
-            # model.eval()
+            model.eval()
             model.to(device)
             train_model = False
     else:
@@ -149,9 +140,7 @@ if __name__ == "__main__":
 
     attack_model = pertubation.M5(n_input=waveform.shape[0], n_output=10)
     attack_model.load_state_dict(torch.load('model2.ptf'))
-    # attack_model.train()
     attack_model = attack_model.to(device)
-    # attack_model.eval()
 
     optimizer = audioModel.setOptimizer(model, learn_rate = 0.01, weight_decay=0.0001)
     # reduce the learning after 20 epochs by a factor of 10
@@ -171,18 +160,19 @@ if __name__ == "__main__":
             audioModel.test(model, 1, test_loader, device, transform, pbar, pbar_update)
             scheduler.step()
 
-    output_y = [[0] * 10 for i in range(0, 10)]
+    
     
     if(run_full_test == True): #will update later on!
-        # attack_model.eval()
+
+        output_y = [[0] * 10 for i in range(0, 10)]
         for fileIndex in range(0, len(test_set)):
             waveform, sample_rate, utterance, *_ = test_set[fileIndex]
             if(waveform.size()[1] != 16000):
                 pad_vals = (0, 16000 - waveform.size()[1])
                 padded_waveform = torch.nn.functional.pad(waveform, pad_vals, mode='constant', value=0)
-                output = audioModel.predict(padded_waveform, attack_model, device, transform, importDataset.index_to_label)
+                output = audioModel.predict(padded_waveform, model, device, transform, importDataset.index_to_label, perform_transform=True)
             else:
-                output = audioModel.predict(waveform, attack_model, device, transform, importDataset.index_to_label)
+                output = audioModel.predict(waveform, model, device, transform, importDataset.index_to_label, perform_transform=True)
             output_y[labels.index(utterance)][labels.index(output)] += 1
         #end for
         
@@ -190,7 +180,7 @@ if __name__ == "__main__":
         for y in output_y:
             total_tests = np.sum(y)
             graph_data.append([num / total_tests for num in y])
-        # print(graph_data)
+
         graph_data = np.array(graph_data)
         fig = plt.figure()
 
@@ -200,7 +190,7 @@ if __name__ == "__main__":
         plt.colorbar()
         plt.show()
         fig.savefig(graphDir + "heatGraph2.png")
-    # exit(0)
+
     if(save_model == True):
         torch.save(model.state_dict(), save_model_file)
     
@@ -210,19 +200,19 @@ if __name__ == "__main__":
     attack_model.load_state_dict(torch.load('model2.ptf'))
     attack_model = attack_model.to(device)
     test_loader_iterator = iter(test_loader)
+    
     currentBatch = 0
     pertubation_results = []
     batch_number = 0
-
     correct_label = []
     pertubated_label = []
+
     while True:
         try:
             #extract batches of wave_forms, and target labels
             data, target = next(test_loader_iterator)
+            
             #changes target values to be what we want based on the utterance of current wave_form
-            #
-            # print(data.shape[0])
             for i in range(currentBatch, currentBatch + data.shape[0]):
                 wave_form, sample_rate, utterance, *_ = test_set[i]
                 correct_label.append(utterance)
@@ -235,30 +225,30 @@ if __name__ == "__main__":
             pertubation_results.append(pertubation.attack(attack_model, device, data, target, targeted=True))
             print(target)
             for p in range(0, pertubation_results[batch_number].shape[0]):
-                new_prediction = audioModel.predict(pertubation_results[batch_number][p], attack_model, device, transform, importDataset.index_to_label)
+                new_prediction = audioModel.predict(pertubation_results[batch_number][p], attack_model, device, transform, importDataset.index_to_label, perform_transform=False)
                 pertubated_label.append(new_prediction)
-            # print(pertubation_results[0][0])
             batch_number += 1
             print("batch: " + str(batch_number))
             break
         except StopIteration:
-
             print("end")
             break
         
+    
+    #Will make this look cleaner, but for now it's fine
     mismatches = 0
     left_count = 0
     right = 0
     for i in range(0, len(pertubated_label)):
         if(correct_label[i] != pertubated_label[i]):
             mismatches += 1
-        if(pertubated_label[i] == "no"):
+        if(pertubated_label[i] == "left"):
             left_count += 1
         if(correct_label[i] == "right"):
             right += 1
     #print(correct_label[i] + " --> " + pertubated_label[i])
-    print("mismatches" + str(mismatches))
-    print("no count: " + str(left_count))
+    print("mismatches: " + str(mismatches))
+    print("left count: " + str(left_count))
     print("right count: " + str(right))
     print(len(pertubated_label))
     

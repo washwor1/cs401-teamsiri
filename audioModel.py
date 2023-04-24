@@ -103,10 +103,11 @@ def setOptimizer(model, learn_rate, weight_decay):
 def setScheduler(optimizer, step_size, gamma):
     return optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
-def predict(tensor, model, device, transform, index_to_label):
+def predict(tensor, model, device, transform, index_to_label, perform_transform):
     # Use the model to predict the label of the waveform
     tensor = tensor.to(device)
-    tensor = transform(tensor)
+    if(perform_transform == True):
+        tensor = transform(tensor)
     #print(tensor.size())
     tensor = model(tensor.unsqueeze(0))
     tensor = get_likely_index(tensor)

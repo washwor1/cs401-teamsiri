@@ -177,30 +177,30 @@ class M5(nn.Module):
 
 
                                             # .01, .001
-def attack(model, device, xs, target = None, eps=.01, alpha=0.001, iters=60, targeted=False):
+def attack(model, device, batch, target = None, eps=.01, alpha=0.001, iters=200, targeted=False):
     
-    xs = xs.to(device)
+    batch = batch.to(device)
     target = target.to(device)
     loss = nn.CrossEntropyLoss()
         
-    ori_xs = xs.data
+    ori_batch = batch.data
     
     if target == None and targeted == True:
         print("In pertubation.attack(): No target specified, but targeted is True")
 
     
     for i in range(iters):
-        xs.requires_grad = True
-        outputs = model(xs)
-    
+        batch.requires_grad = True
+        outputs = model(batch)
+
         model.zero_grad()
         cost = loss(outputs.squeeze(), target).to(device)
         cost.backward()
-        adv_xs = xs - alpha*xs.grad.sign()
+        adv_batch = batch - alpha*batch.grad.sign()
         
-        eta = torch.clamp(adv_xs - ori_xs, min=-eps, max=eps)
-        xs = torch.clamp(ori_xs + eta, min=-1, max=1).detach_()
+        eta = torch.clamp(adv_batch - ori_batch, min=-eps, max=eps)
+        batch = torch.clamp(ori_batch + eta, min=-1, max=1).detach_()
         print("Iteration: " + str(i))
             
-    return xs   
+    return batch   
 
