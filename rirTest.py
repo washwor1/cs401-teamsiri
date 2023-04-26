@@ -21,7 +21,7 @@ from IPython.display import Audio, display
 if width < 10:
   matplotlib.rcParams['figure.figsize'] = [width * 2.5, height]
 
-'''
+
 _SAMPLE_DIR = "_sample_data"
 SAMPLE_WAV_URL = "https://pytorch-tutorial-assets.s3.amazonaws.com/steam-train-whistle-daniel_simon.wav"
 SAMPLE_WAV_PATH = os.path.join(_SAMPLE_DIR, "steam.wav")
@@ -51,7 +51,7 @@ S3_KEY = "VOiCES_devkit/source-16k/train/sp0307/Lab41-SRI-VOiCES-src-sp0307-ch12
 YESNO_DATASET_PATH = os.path.join(_SAMPLE_DIR, "yes_no")
 os.makedirs(YESNO_DATASET_PATH, exist_ok=True)
 os.makedirs(_SAMPLE_DIR, exist_ok=True)
-'''
+
 def _fetch_data():
   uri = [
     (SAMPLE_WAV_URL, SAMPLE_WAV_PATH),
@@ -354,7 +354,24 @@ def benchmark_resample(
     elapsed = time.time() - begin
     return elapsed / iters
 
+sample_rate = 8000
 
+rir_raw, _ = get_rir_sample(resample=sample_rate)
+
+plot_waveform(rir_raw, sample_rate, title="Room Impulse Response (raw)", ylim=None)
+plot_specgram(rir_raw, sample_rate, title="Room Impulse Response (raw)")
+play_audio(rir_raw, sample_rate)
+
+rir = rir_raw[:, int(sample_rate*1.01):int(sample_rate*1.3)]
+rir = rir / torch.norm(rir, p=2)
+rir = torch.flip(rir, [1])
+
+print_stats(rir)
+plot_waveform(rir, sample_rate, title="Room Impulse Response", ylim=None)
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
 
 
 speech, _ = get_speech_sample(resample=sample_rate)
@@ -369,4 +386,13 @@ plot_specgram(speech, sample_rate, title="Original")
 play_audio(speech, sample_rate)
 
 plot_specgram(augmented, sample_rate, title="RIR Applied")
-play_audio(augmented, sample_rate
+play_audio(augmented, sample_rate)
+
+'''
+ with wave.open('output.wav', 'wb') as wave_file:
+        wave_file.setnchannels(1)  # mono audio
+        wave_file.setsampwidth(2)  # 16-bit audio
+        wave_file.setframerate(16000)  # sampling rate
+        wave_file.setnframes(testThing.shape[0])  # number of frames
+        wave_file.writeframes(testThing.astype(np.int16))  # write audio data
+'''
