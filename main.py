@@ -71,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=256, type=int, help="Batch size for model training")
     parser.add_argument("--test_model", default=False, type=bool, help="Test the model")
     parser.add_argument("--run_full_test", default=False, type=bool, help="Test the model on all test data")
-    
+    print("test")
     args = parser.parse_args()
 
     log_interval     = 20
@@ -93,9 +93,10 @@ if __name__ == "__main__":
     print("Device: " + str(device))
 
     #get training and testing set
-    train_set = importDataset.SubsetSC("training")
-    test_set = importDataset.SubsetSC("testing")
-
+    #train_set = importDataset.SubsetSC("training")
+    #test_set = importDataset.SubsetSC("testing")
+    train_LIR_set = importDataset.SubsetSC("training_LIR")
+    exit(0)
     np.savetxt("original.txt", test_set[0][0][0].numpy())
     fig = plt.figure()
     plt.plot(test_set[0][0][0].numpy())
