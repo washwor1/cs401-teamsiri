@@ -24,7 +24,11 @@ import numpy as np
 #torchaudio.save("output.wav", waveform, sample_rate, encoding="PCM_S", bits_per_sample=16, format="wav")
 #torchaudio.save(buffer_, waveform, sample_rate, format="wav")
 
-SAMPLE_RIR_PATH = "wavFiles/dataRIR.wav"#"bedTest.wav"
+#SAMPLE_RIR_PATH = "wavFiles/RIR_tested_1.wav" # 0.075 y
+#SAMPLE_RIR_PATH = "wavFiles/RIR_med_room7-2.wav" #0.35 rir[0] = rir[0] * 0.5
+#SAMPLE_RIR_PATH = "wavFiles/RIR_med_room7-16.wav"
+SAMPLE_RIR_PATH = "wavFiles/RIR_med_room7-23.wav"
+
 SAMPLE_WAV_SPEECH_PATH = "bedTest.wav"
 SAMPLE_WAV_PATH = SAMPLE_WAV_SPEECH_PATH
 
@@ -122,9 +126,9 @@ rir = rir_raw
 rir = rir / torch.norm(rir, p=2)
 rir = torch.flip(rir, [1])
 #print(rir[0])
-rir[0] = rir[0] * 0.5
+#rir[0] = rir[0] * 0.5 #rir[0] = rir[0] * 5
 #print(rir[0])
-#print(rir.shape)
+print(rir.shape)
 
 #print_stats(rir)
 plot_waveform(rir, sample_rate, title="Room Impulse Response", ylim=None)
@@ -135,11 +139,10 @@ speech, _ = get_speech_sample(resample=sample_rate)
 ##speech, sample_rate = get_speech_sample(resample=sample_rate)
 
 speech_ = torch.nn.functional.pad(speech, (rir.shape[1]-1, 0))
-print(speech_.shape)
+print(speech.shape)
+
 augmented = torch.nn.functional.conv1d(speech_[None, ...], rir[None, ...])[0]
 
-
-augmented = torch.nn.functional.conv1d(speech[None, ...], rir[None, ...])[0]
 plot_waveform(speech, sample_rate, title="Original", ylim=None)
 plot_waveform(augmented, sample_rate, title="RIR Applied", ylim=None)
 
@@ -151,6 +154,9 @@ plot_specgram(augmented, sample_rate, title="RIR Applied")
 
 #torchaudio.save("output.wav", speech, sample_rate, encoding="PCM_S", bits_per_sample=16, format="wav")
 #torchaudio.save("outputAugmented.wav", augmented, sample_rate, encoding="PCM_S", bits_per_sample=16, format="wav")
+
+torchaudio.save("RIR_MED_7_23.wav", rir, sample_rate, format="wav")
+
 torchaudio.save("output.wav", speech, sample_rate, format="wav")
 torchaudio.save("outputAugmentedRIR.wav", augmented, sample_rate, format="wav")
 
