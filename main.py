@@ -109,13 +109,14 @@ if __name__ == "__main__":
     # print(list(audio_data))
     # exit(0)
 
-    train_LIR_set = importDataset.SubsetSC("training_LIR")
-    exit(0)
-    np.savetxt("original.txt", test_set[0][0][0].numpy())
-    fig = plt.figure()
-    plt.plot(test_set[0][0][0].numpy())
-    plt.title("Original audio: Right")
-    fig.savefig("original.png")
+    train_set = importDataset.SubsetSC("training_rir")
+    test_set = importDataset.SubsetSC("testing_rir")
+
+    # np.savetxt("original.txt", test_set[0][0][0].numpy())
+    # fig = plt.figure()
+    # plt.plot(test_set[0][0][0].numpy())
+    # plt.title("Original audio: Right")
+    # fig.savefig("original.png")
 
     #waveform, sample_rate, utterance, *_ = train_set[50]
     
@@ -139,23 +140,22 @@ if __name__ == "__main__":
             model.to(device)
             train_model = False
     else:
-        pass
-        #print("Creating new model")
-        #model.to(device)
-        #train_model = True
-        #test_model = False
-        #data, target = next(iter(test_loader))
+        print("Creating new model")
+        model.to(device)
+        train_model = True
+        test_model = False
+        data, target = next(iter(test_loader))
     
     # for i in range(0, 256):
     #     target[0] = 4
-    waveform, *_ = train_set[2]
+    # waveform, *_ = train_set[2]
     # data, target = next(iter(test_loader))
     # for i in range(0, 256):
     #     target[0] = 4
 
-    attack_model = pertubation.M5(n_input=waveform.shape[0], n_output=10)
-    attack_model.load_state_dict(torch.load('model2.ptf'))
-    attack_model = attack_model.to(device)
+    # attack_model = pertubation.M5(n_input=waveform.shape[0], n_output=10)
+    # attack_model.load_state_dict(torch.load('model2.ptf'))
+    # attack_model = attack_model.to(device)
 
     optimizer = audioModel.setOptimizer(model, learn_rate = 0.01, weight_decay=0.0001)
     # reduce the learning after 20 epochs by a factor of 10
@@ -175,7 +175,7 @@ if __name__ == "__main__":
             audioModel.test(model, 1, test_loader, device, transform, pbar, pbar_update)
             scheduler.step()
 
-    
+    exit(0)
     
     if(run_full_test == True): #will update later on!
 
