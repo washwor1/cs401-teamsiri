@@ -111,13 +111,14 @@ def play_audio(waveform, sample_rate):
 
 
 ######################################
+ 
 sample_rate = 16000#16000 #8000
 
 #rir_raw, sample_rate = get_rir_sample(resample=sample_rate)
 rir_raw, _ = get_rir_sample(resample=sample_rate)
 
-plot_waveform(rir_raw, sample_rate, title="Room Impulse Response (raw)", ylim=None)
-plot_specgram(rir_raw, sample_rate, title="Room Impulse Response (raw)")
+# plot_waveform(rir_raw, sample_rate, title="Room Impulse Response (raw)", ylim=None)
+# plot_specgram(rir_raw, sample_rate, title="Room Impulse Response (raw)")
 #play_audio(rir_raw, sample_rate)
 
 #rir = rir_raw[:, int(sample_rate*1.01):int(sample_rate*1.3)]
@@ -128,17 +129,25 @@ rir = torch.flip(rir, [1])
 #print(rir[0])
 #rir[0] = rir[0] * 0.5 #rir[0] = rir[0] * 5
 #print(rir[0])
+<<<<<<< HEAD
 print(rir.shape)
+=======
+#print(rir.shape)
+# print([float(x) for x in rir[0]])
+>>>>>>> 9702ea8 (idk)
 
 #print_stats(rir)
-plot_waveform(rir, sample_rate, title="Room Impulse Response", ylim=None)
+# plot_waveform(rir, sample_rate, title="Room Impulse Response", ylim=None)
 ######################################
 
 speech, _ = get_speech_sample(resample=sample_rate)
 
+
+
 ##speech, sample_rate = get_speech_sample(resample=sample_rate)
 
 speech_ = torch.nn.functional.pad(speech, (rir.shape[1]-1, 0))
+<<<<<<< HEAD
 print(speech.shape)
 
 augmented = torch.nn.functional.conv1d(speech_[None, ...], rir[None, ...])[0]
@@ -159,6 +168,39 @@ torchaudio.save("RIR_MED_7_23.wav", rir, sample_rate, format="wav")
 
 torchaudio.save("output.wav", speech, sample_rate, format="wav")
 torchaudio.save("outputAugmentedRIR.wav", augmented, sample_rate, format="wav")
+=======
+# print(speech_.shape)
+augmented = torch.nn.functional.conv1d(speech_[None, ...], rir[None, ...])[0]
+
+torchaudio.save("testThing.wav", augmented, sample_rate, format="wav")
+
+# testThing = np.array([float(x) for x in augmented[0]])
+# # print()
+
+# with wave.open('testThing.wav', 'wb') as wave_file:
+#     wave_file.setnchannels(1)  # mono audio
+#     wave_file.setsampwidth(2)  # 16-bit audio
+#     wave_file.setframerate(16000)  # sampling rate
+#     wave_file.setnframes(testThing.shape[0])  # number of frames
+#     wave_file.writeframes(testThing.astype(np.int16))  # write audio data
+>>>>>>> 9702ea8 (idk)
 
 
-print("end")
+
+# # augmented = torch.nn.functional.conv1d(speech[None, ...], rir[None, ...])[0]
+# plot_waveform(speech, sample_rate, title="Original", ylim=None)
+# plot_waveform(augmented, sample_rate, title="RIR Applied", ylim=None)
+
+# plot_specgram(speech, sample_rate, title="Original")
+# play_audio(speech, sample_rate)
+
+# plot_specgram(augmented, sample_rate, title="RIR Applied")
+# #play_audio(augmented, sample_rate)
+
+# #torchaudio.save("output.wav", speech, sample_rate, encoding="PCM_S", bits_per_sample=16, format="wav")
+# #torchaudio.save("outputAugmented.wav", augmented, sample_rate, encoding="PCM_S", bits_per_sample=16, format="wav")
+# torchaudio.save("output.wav", speech, sample_rate, format="wav")
+# torchaudio.save("outputAugmentedRIR.wav", augmented, sample_rate, format="wav")
+
+
+# print("end")

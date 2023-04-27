@@ -95,6 +95,20 @@ if __name__ == "__main__":
     #get training and testing set
     #train_set = importDataset.SubsetSC("training")
     #test_set = importDataset.SubsetSC("testing")
+
+    # with wave.open('wavFiles/Room007-00002.wav', 'rb') as wav_file:
+    # # Get the audio file's properties
+    #     channels = wav_file.getnchannels()
+    #     sample_width = wav_file.getsampwidth()
+    #     sample_rate = wav_file.getframerate()
+    #     num_frames = wav_file.getnframes()
+
+    #     # Read all the audio data from the file
+    #     audio_data = wav_file.readframes(num_frames)
+
+    # print(list(audio_data))
+    # exit(0)
+
     train_LIR_set = importDataset.SubsetSC("training_LIR")
     exit(0)
     np.savetxt("original.txt", test_set[0][0][0].numpy())

@@ -60,7 +60,10 @@ class SubsetSC(SPEECHCOMMANDS):
             self._walker = [w for w in self._walker if w not in excludes]
             self._walker = filter_selected_labels(self._walker)
         elif subset == "training_LIR":
-            excludes = load_list("LIR/training_list_LIR.txt")
+            excludes = load_list("validation_list.txt") + load_list("testing_list.txt")
+            excludes = set(excludes)
+            self._walker = [w for w in self._walker if w not in excludes]
+            self._walker = filter_selected_labels(self._walker)
             
 
 
