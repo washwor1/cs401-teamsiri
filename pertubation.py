@@ -177,7 +177,7 @@ class M5(nn.Module):
 
 
                                             # .01, .001
-def attack(model, device, batch, target = None, eps=.01, alpha=0.001, iters=300, targeted=False):
+def attack(model, device, batch, target = None, eps=.01, alpha=0.001, iters=200, targeted=False):
     
     batch = batch.to(device)
     target = target.to(device)
@@ -196,7 +196,7 @@ def attack(model, device, batch, target = None, eps=.01, alpha=0.001, iters=300,
         model.zero_grad()
         cost = loss(outputs.squeeze(), target).to(device)
         cost.backward()
-        adv_batch = batch - alpha*batch.grad.sign()
+        adv_batch = batch - alpha * batch.grad.sign()
         
         eta = torch.clamp(adv_batch - ori_batch, min=-eps, max=eps)
         batch = torch.clamp(ori_batch + eta, min=-1, max=1).detach_()

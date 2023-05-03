@@ -16,12 +16,12 @@ import numpy as np
 import torch
 import audioModel as am
 from torch.utils.mobile_optimizer import optimize_for_mobile
-
+from scipy.io import wavfile
 
 batch_size = 256
 origin_frequency = 16000
 new_frequency = 8000
-model_path = "test.ptf"
+model_path = "models/98_raw.ptf"
 
 labels = ['yes', 'no', 'up', 'down', 'left', 'right', 'on', 'off', 'stop', 'go']
 
@@ -105,10 +105,9 @@ while True:
         for p in range(0, pertubation_results[batch_number].shape[0]):
             new_prediction = audioModel.predict(pertubation_results[batch_number][p], attack_model, device, transform, importDataset.index_to_label, perform_transform=False)
             pertubated_label.append(new_prediction)
-        
+
         batch_number += 1
         print("batch: " + str(batch_number))
-        
     except StopIteration:
         print("end")
         break
@@ -136,11 +135,8 @@ for i in range(0, len(pertubated_label)):
     correct_pertubated_dict[correct_label[i]][2] += 1
     if(correct_pertubated_dict[correct_label[i]][0] == pertubated_label[i]):
         correct_pertubated_dict[correct_label[i]][1] += 1
-
-
-print("Total misclassifications:")
-for key in correct_pertubated_dict:
-    print(key + ": " + str(correct_pertubated_dict[key][1]) + " / " + str(correct_pertubated_dict[key][2]))
+    else:
+        print(i)
 
 output_y = [[0] * 10 for i in range(0, 10)]
 for p in range(0, len(pertubated_label)):
@@ -161,17 +157,36 @@ plt.imshow(graph_data, cmap='gist_earth', interpolation='nearest')
 plt.xticks(range(0, 10), labels=labels)
 plt.yticks(range(0, 10), labels=labels)
 plt.colorbar()
-plt.show()
-fig.savefig("pertubated_part_one.png")
+# plt.show()
+fig.savefig("graphs/pertubated_part_one.png")
 
-    # if(correct_label[i] != pertubated_label[i]):
-        # mismatches += 1
-    # if(pertubated_label[i] == "left"):
-    #     left_count += 1
-    # if(correct_label[i] == "right"):
-    #     right += 1
-#print(correct_label[i] + " --> " + pertubated_label[i])
-# print("mismatches: " + str(mismatches))
-# print("left count: " + str(left_count))
-# print("right count: " + str(right))
-# print(len(pertubated_label))
+index = -1
+folder = "part_1_pertubations/"
+
+
+for batch in range(len(pertubation_results)):
+    for p in range(len(pertubation_results[batch])):
+        index += 1
+        if (correct_pertubated_dict[correct_label[index]][0] == pertubated_label[index]):
+            print("Saving: " + str(index) +  " / " + str(len(pertubated_label)))
+            sub_folder = correct_label[index] + "_" + pertubated_label[index] + "/"
+            save_file = correct_label[index] + "_" + pertubated_label[index] + "_" + str(index) + ".wav"
+            
+            with wave.open(folder + sub_folder + save_file, 'wb') as wave_file:
+                wave_file.setnchannels(1)  # mono audio
+                wave_file.setsampwidth(2)  # 16-bit audio
+                wave_file.setframerate(16000)  # sampling rate
+                wave_file.setnframes(pertubation_results[batch][p][0].shape[0])  # number of frames
+                wave_file.writeframes((pertubation_results[batch][p].cpu().numpy()[0] * 32767).astype(np.int16).tobytes())  # write audio data
+
+        # plt.plot(pertubation_results[batch][p].cpu().numpy()[0])
+        # plt.show()
+        # print(audioModel.predict(pertubation_results[batch][p], attack_model, device, transform, importDataset.index_to_label, perform_transform=False))
+        # plt.plot(np.array(pertubation_results[batch][p].cpu()[0]))
+        # plt.show()
+        # exit(0)
+
+
+print("Total misclassifications:")
+for key in correct_pertubated_dict:
+    print(key + ": " + str(correct_pertubated_dict[key][1]) + " / " + str(correct_pertubated_dict[key][2]))
