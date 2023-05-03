@@ -174,7 +174,7 @@ def _attack(model, xs, ys, eps=0.01, alpha=0.001, iters=20, targeted=False):
         
     ori_xs = xs.data
         
-    for i in range(iters):
+    for _ in range(iters):
         xs.requires_grad = True
         outputs = model(xs)
     

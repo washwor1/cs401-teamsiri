@@ -46,6 +46,7 @@ class SubsetSC(SPEECHCOMMANDS):
 
         def load_list(filename):
             filepath = os.path.join(self._path, filename)
+            print(filepath)
             with open(filepath) as fileobj:
                 return [os.path.normpath(os.path.join(self._path, line.strip())) for line in fileobj]
 
@@ -61,11 +62,16 @@ class SubsetSC(SPEECHCOMMANDS):
             self._walker = filter_selected_labels(self._walker)
         elif subset == "training_rir":
             excludes = load_list("rir_validation.txt") + load_list("rir_testing.txt")
+            print(len(excludes))
             excludes = set(excludes)
+            print(self._walker)
             self._walker = [w for w in self._walker if w not in excludes]
+            print(len(self._walker))
             self._walker = filter_selected_labels(self._walker)
+            print(len(self._walker))
         elif subset == "testing_rir":
-            excludes = load_list("testing_list.txt")
+            excludes = load_list("rir_testing.txt")
+            # print(len(excludes))
             self._walker = filter_selected_labels(self._walker)
             
 

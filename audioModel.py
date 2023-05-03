@@ -33,7 +33,8 @@ class M5(nn.Module):
         x = self.conv4(x)
         x = F.relu(self.bn4(x))
         x = self.pool4(x)
-        x = F.avg_pool1d(x, x.shape[-1])
+        # x = F.avg_pool1d(x, x.shape[-1])
+        x = F.avg_pool1d(x, (x.shape[-1],))
         x = x.permute(0, 2, 1)
         x = self.fc1(x)
         return F.log_softmax(x, dim=2)
@@ -98,9 +99,13 @@ def test(model, epoch, test_loader, device, transform, pbar, pbar_update):
 
 
 def setOptimizer(model, learn_rate, weight_decay):
+    print("Learn rate: " + str(learn_rate))
+    print("Weight decay: " + str(weight_decay))
     return optim.Adam(model.parameters(), betas=(0.9, 0.999), lr=learn_rate, weight_decay=weight_decay)
 
 def setScheduler(optimizer, step_size, gamma):
+    print("Step size: " + str(step_size))
+    print("Gamma: " + str(gamma))
     return optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
 def predict(tensor, model, device, transform, index_to_label, perform_transform):

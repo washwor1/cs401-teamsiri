@@ -177,7 +177,7 @@ class M5(nn.Module):
 
 
                                             # .01, .001
-def attack(model, device, batch, target = None, eps=.01, alpha=0.001, iters=200, targeted=False):
+def attack(model, device, batch, target = None, eps=.01, alpha=0.001, iters=300, targeted=False):
     
     batch = batch.to(device)
     target = target.to(device)

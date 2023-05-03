@@ -4,7 +4,6 @@ import torch.optim as optim
 from tqdm import tqdm
 import torchaudio
 import argparse
-import torch
 import os
 import tensorflow as tf
 #local files
@@ -14,6 +13,9 @@ import pertubation
 import librosa
 import wave
 import numpy as np
+import torch
+import audioModel as am
+from torch.utils.mobile_optimizer import optimize_for_mobile
 
 
 testAudio = None
@@ -50,7 +52,7 @@ def get_device_type():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def get_device_info(device):
-    if device == "cuda":
+    if str(device) == "cuda":
         return 1, True
     else:
         return 0, False
@@ -71,7 +73,6 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=256, type=int, help="Batch size for model training")
     parser.add_argument("--test_model", default=False, type=bool, help="Test the model")
     parser.add_argument("--run_full_test", default=False, type=bool, help="Test the model on all test data")
-    print("test")
     args = parser.parse_args()
 
     log_interval     = 20
@@ -88,51 +89,28 @@ if __name__ == "__main__":
     run_full_test    = args.run_full_test
     train_model      = False
 
-    device = 'cpu' #get_device_type()
+    device = get_device_type()
     num_workers, pin_memory = get_device_info(device)
     print("Device: " + str(device))
-
+    print("Worker: " + str(num_workers))
+    print("Memory: " + str(pin_memory))
+    print("Getting training, testing sets")
     #get training and testing set
-    #train_set = importDataset.SubsetSC("training")
-    #test_set = importDataset.SubsetSC("testing")
-
-    # with wave.open('wavFiles/Room007-00002.wav', 'rb') as wav_file:
-    # # Get the audio file's properties
-    #     channels = wav_file.getnchannels()
-    #     sample_width = wav_file.getsampwidth()
-    #     sample_rate = wav_file.getframerate()
-    #     num_frames = wav_file.getnframes()
-
-    #     # Read all the audio data from the file
-    #     audio_data = wav_file.readframes(num_frames)
-
-    # print(list(audio_data))
-    # exit(0)
-
-    train_set = importDataset.SubsetSC("training_rir")
-    test_set = importDataset.SubsetSC("testing_rir")
-
-    # np.savetxt("original.txt", test_set[0][0][0].numpy())
-    # fig = plt.figure()
-    # plt.plot(test_set[0][0][0].numpy())
-    # plt.title("Original audio: Right")
-    # fig.savefig("original.png")
-
-    #waveform, sample_rate, utterance, *_ = train_set[50]
-    
+    train_set = importDataset.SubsetSC("training")
+    test_set = importDataset.SubsetSC("testing")
+    print("Getting Transform function")
+    #get transform function
     transform = set_tranform_function(origin_frequency, new_frequency, device)
-
+    print("Getting loaders")
     #get testing and training loaders --> Will have to look at what this actually is!
     train_loader = importDataset.getTrainLoader(train_set, batch_size, True, num_workers, pin_memory)
     test_loader = importDataset.getTestLoader(test_set, batch_size, False, False, num_workers, pin_memory)
-
-    #get model --> if statement for either loading in, or creating a new one!
-    model = audioModel.M5()
-    print(load_model)
     
+    model = audioModel.M5()
+
     if(load_model == True):
         if(os.path.isfile(load_model_file) == False):
-            print("\'%s\' does not exist, exiting" % load_model_file) #Force to rerun
+            print("\'%s\' does not exist, exiting" % load_model_file)
             exit(1)
         else:
             model.load_state_dict(torch.load(load_model_file))
@@ -141,47 +119,37 @@ if __name__ == "__main__":
             train_model = False
     else:
         print("Creating new model")
-        model.to(device)
         train_model = True
         test_model = False
         data, target = next(iter(test_loader))
     
-    # for i in range(0, 256):
-    #     target[0] = 4
-    # waveform, *_ = train_set[2]
-    # data, target = next(iter(test_loader))
-    # for i in range(0, 256):
-    #     target[0] = 4
+    model.to(device)
 
-    # attack_model = pertubation.M5(n_input=waveform.shape[0], n_output=10)
-    # attack_model.load_state_dict(torch.load('model2.ptf'))
-    # attack_model = attack_model.to(device)
-
+    print("Setting optimizer")
     optimizer = audioModel.setOptimizer(model, learn_rate = 0.01, weight_decay=0.0001)
+    print("Setting scheduler")
     # reduce the learning after 20 epochs by a factor of 10
     scheduler = audioModel.setScheduler(optimizer, step_size=10, gamma=0.1)
-
+    
     pbar_update = 1 / (len(train_loader) + len(test_loader))
+    
     if(train_model == True):
-        #training and testing model!
         with tqdm(total=n_epoch) as pbar:
             for epoch in range(1, n_epoch + 1):
                 audioModel.train(model, epoch, log_interval, train_loader, device, transform, optimizer, pbar, pbar_update)
                 audioModel.test(model, epoch, test_loader, device, transform, pbar, pbar_update)
                 scheduler.step()
 
-    elif(test_model == True): #get rid of pbar, not needed, only running one test on it. 
+    elif(test_model == True):
         with tqdm(total=1) as pbar:
             audioModel.test(model, 1, test_loader, device, transform, pbar, pbar_update)
             scheduler.step()
-
-    exit(0)
     
-    if(run_full_test == True): #will update later on!
-
+    if(run_full_test == True):
         output_y = [[0] * 10 for i in range(0, 10)]
         for fileIndex in range(0, len(test_set)):
             waveform, sample_rate, utterance, *_ = test_set[fileIndex]
+            #pad waveforms that are not length 16000
             if(waveform.size()[1] != 16000):
                 pad_vals = (0, 16000 - waveform.size()[1])
                 padded_waveform = torch.nn.functional.pad(waveform, pad_vals, mode='constant', value=0)
@@ -207,66 +175,14 @@ if __name__ == "__main__":
         fig.savefig(graphDir + "heatGraph2.png")
 
     if(save_model == True):
+        model = model.to('cpu')
         torch.save(model.state_dict(), save_model_file)
-    
-    waveform, *_ = train_set[0]
-
-    attack_model = pertubation.M5(n_input=waveform.shape[0], n_output=10)
-    attack_model.load_state_dict(torch.load('model2.ptf'))
-    attack_model = attack_model.to(device)
-    test_loader_iterator = iter(test_loader)
-    
-    currentBatch = 0
-    pertubation_results = []
-    batch_number = 0
-    correct_label = []
-    pertubated_label = []
-
-    while True:
-        try:
-            #extract batches of wave_forms, and target labels
-            data, target = next(test_loader_iterator)
-            
-            #changes target values to be what we want based on the utterance of current wave_form
-            for i in range(currentBatch, currentBatch + data.shape[0]):
-                wave_form, sample_rate, utterance, *_ = test_set[i]
-                correct_label.append(utterance)
-                currentTarget = i % 256
-                new_label_index = get_target_label(utterance)
-                target[currentTarget] = new_label_index
-
-            currentBatch += 256
-            data, target = data.to(device), target.to(device)
-            pertubation_results.append(pertubation.attack(attack_model, device, data, target, targeted=True))
-            print(target)
-            for p in range(0, pertubation_results[batch_number].shape[0]):
-                new_prediction = audioModel.predict(pertubation_results[batch_number][p], attack_model, device, transform, importDataset.index_to_label, perform_transform=False)
-                pertubated_label.append(new_prediction)
-            batch_number += 1
-            print("batch: " + str(batch_number))
-            break
-        except StopIteration:
-            print("end")
-            break
-        
-    
-    #Will make this look cleaner, but for now it's fine
-    mismatches = 0
-    left_count = 0
-    right = 0
-    for i in range(0, len(pertubated_label)):
-        if(correct_label[i] != pertubated_label[i]):
-            mismatches += 1
-        if(pertubated_label[i] == "left"):
-            left_count += 1
-        if(correct_label[i] == "right"):
-            right += 1
-    #print(correct_label[i] + " --> " + pertubated_label[i])
-    print("mismatches: " + str(mismatches))
-    print("left count: " + str(left_count))
-    print("right count: " + str(right))
-    print(len(pertubated_label))
-    
+        example_input = torch.randn(1, 1, 16000)
+        # Convert the PyTorch model to TorchScript
+        traced_script_module = torch.jit.trace(model, example_input)
+        optimized = optimize_for_mobile(traced_script_module)
+        # Save the TorchScript model
+        traced_script_module._save_for_lite_interpreter('models/##_rir_model_app_3.ptl')
     
     exit(0)
     print(target)

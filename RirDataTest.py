@@ -1,17 +1,6 @@
-import io
 import os
-import math
-import tarfile
-import multiprocessing
 import torch
 import torchaudio
-import scipy
-#import librosa
-#import boto3
-#from botocore import UNSIGNED
-#from botocore.config import Config
-import requests
-import matplotlib
 import matplotlib.pyplot as plt
 #import pandas as pd
 import time
@@ -32,7 +21,7 @@ def RirConvolve(input_file, out_file, RIRpath = "RIRdataset"):
 
 prefix = "SpeechCommands/speech_commands_v0.02/"
 
-files = ['SpeechCommands/speech_commands_v0.02/convol_rir_testing.txt', "SpeechCommands/speech_commands_v0.02/convol_rir_validation.txt"]
+files = ['SpeechCommands/speech_commands_v0.02/testing_list.txt', "SpeechCommands/speech_commands_v0.02/validation_list.txt"]
 
 total_fork = 4028 + 3698
 current = 0
@@ -46,7 +35,7 @@ for file in files:
             pid = os.fork()
             if(pid == 0):
                 input_file = prefix + file.strip("\n")
-                output_file = prefix + "test_rir/" + file.strip("\n")
+                output_file = prefix + file.strip("\n")
                 RirConvolve(input_file, output_file)
                 exit(0)
             else:

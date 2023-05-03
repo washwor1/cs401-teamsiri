@@ -1,0 +1,12 @@
+#paste links here for downloading data
+
+### Room impulse response datasets
+
+https://github.com/RoyJames/room-impulse-responses
+
+you need wget installed (could do via ``sudo apt wget``). I did mine in WSL.
+
+Within the cloned directory, I did ``wget https://www.openslr.org/resources/28/rirs_noises.zi
+p``. I then extracted the file in the folder it was in.
+
+
