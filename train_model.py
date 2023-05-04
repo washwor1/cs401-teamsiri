@@ -6,6 +6,7 @@ import torchaudio
 import argparse
 import os
 import tensorflow as tf
+
 #local files
 import audioModel
 import importDataset
@@ -29,9 +30,9 @@ origin_frequency = 16000
 new_frequency = 8000
 n_epoch = 20
 log_interval = 20
-model_path = "test.ptf"
-save_model_file = None #"models/.ptf" <-- Format for file or whatever
-save_model_file_app = None #"models/.ptl"
+model_path = "discard.ptf"
+save_model_file = "discard.ptf" #"models/.ptf" <-- Format for file or whatever
+save_model_file_app = "discard.ptf" #"models/.ptl"
 
 def get_target_label(old_label):
     mappedIndex = {"yes":   1, "no":    0,
@@ -83,7 +84,7 @@ test_loader = importDataset.getTestLoader(test_set, batch_size, False, False, nu
 
 print("Creating new model")
 model = audioModel.M5()
-
+model.to(device)
 print("Setting optimizer")
 optimizer = audioModel.setOptimizer(model, learn_rate = 0.01, weight_decay=0.0001)
 print("Setting scheduler")

@@ -158,10 +158,10 @@ plt.xticks(range(0, 10), labels=labels)
 plt.yticks(range(0, 10), labels=labels)
 plt.colorbar()
 # plt.show()
-fig.savefig("graphs/pertubated_part_one.png")
+fig.savefig("graphs/pertubated_part_two.png")
 
 index = -1
-folder = "part_1_pertubations/"
+folder = "part_2_pertubations/"
 
 
 for batch in range(len(pertubation_results)):

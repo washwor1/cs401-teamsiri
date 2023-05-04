@@ -119,7 +119,6 @@ def predict(tensor, model, device, transform, index_to_label, perform_transform)
     tensor = index_to_label(tensor.squeeze())
     return tensor
 
-
 #validate --> Probably will get rid of later. 
 def compute_loss(outputs, target):
     pass
